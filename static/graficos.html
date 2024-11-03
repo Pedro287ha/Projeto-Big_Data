@@ -1,0 +1,329 @@
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Cozinha da Dani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-white">
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-gray-800 shadow">
+            <div class="container mx-auto px-4 py-6 flex justify-center">
+                <h1 class="text-3xl font-bold text-white">Cozinha da Dani</h1>
+
+            </div>
+            <div class="container mx-auto px-4 py-6 flex justify-center">
+                <h2 class="text-1xl font-bold text-white">Sistema de Analise de dados</h2>
+            </div>
+
+        </header>
+        <main class="flex-grow container mx-auto px-4 py-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">Meios de pagamento</h2>
+                    <canvas id="chart1"></canvas>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">Vendas por mes</h2>
+                    <canvas id="chart2"></canvas>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">Faturamento mes</h2>
+                    <canvas id="chart3"></canvas>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <h2 class="text-xl font-bold mb-4">Pratos com maior demanda</h2>
+                    <canvas id="chart4"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+
+        function gerarMesData(dateString) {
+            const date = new Date(dateString);
+
+            // Definindo nomes dos meses
+            const monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
+                "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+
+            
+            const monthIndex = date.getMonth();
+            return monthNames[monthIndex];
+        }
+
+
+        // Make a request to the API
+        fetch('http://localhost:8000/data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ocorreu algum erro');
+                }
+                return response.json();
+            })
+            .then(data => {
+
+
+                // Logica meio de pagamento
+                let lista_items = [Object.values(data['Meio_pagamentos'])];
+                lista_geral = lista_items.map(innerList => innerList).flat();
+
+
+
+
+                const frequency = lista_geral.reduce((acc, item) => {
+                    acc[item] = (acc[item] || 0) + 1;
+                    return acc;
+                }, {});
+                // Dividindo item em 2 listas
+                const uniqueItems = Object.keys(frequency); 
+                const counts = Object.values(frequency);
+
+                const ctx1 = document.getElementById('chart1').getContext('2d');
+                const chart1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: uniqueItems, 
+                        datasets: [{
+                            label: 'Meios de pagamento utilizados',
+                            data: counts, 
+                            backgroundColor: [
+                                'rgba(255, 99, 132, 0.2)',
+                                'rgba(54, 162, 235, 0.2)',
+                                'rgba(255, 206, 86, 0.2)',
+                                'rgba(75, 192, 192, 0.2)',
+                                'rgba(153, 102, 255, 0.2)',
+                                'rgba(255, 159, 64, 0.2)'
+                            ],
+                            borderColor: [
+                                'rgba(255, 99, 132, 1)',
+                                'rgba(54, 162, 235, 1)',
+                                'rgba(255, 206, 86, 1)',
+                                'rgba(75, 192, 192, 1)',
+                                'rgba(153, 102, 255, 1)',
+                                'rgba(255, 159, 64, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: 'white'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: 'white'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                });
+
+
+                let lista_compra_mes = []
+                for (let x of data["Data_compras"]) {
+                    lista_compra_mes.push(gerarMesData(x));
+                }
+                const gtt = lista_compra_mes.reduce((acc, item) => {
+                    acc[item] = (acc[item] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const ctx2 = document.getElementById('chart2').getContext('2d');
+                const chart2 = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: Object.keys(gtt),
+                        datasets: [{
+                            label: 'Vendas',
+                            data: Object.values(gtt),
+                            fill: false,
+                            borderColor: 'rgb(75, 192, 192)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: 'white'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: 'white'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Ajustes e configuracoes grafico sumario mes
+
+
+                const valores = Object.values(data['Valores']);
+                const coisa = Object.values(data["Data_compras"])
+
+                // 
+                const monthlySums = {};
+
+                const monthNames = {
+                    '01': 'janeiro',
+                    '02': 'fevereiro',
+                    '03': 'março',
+                    '04': 'abril',
+                    '05': 'maio',
+                    '06': 'junho',
+                    '07': 'julho',
+                    '08': 'agosto',
+                    '09': 'setembro',
+                    '10': 'outubro',
+                    '11': 'novembro',
+                    '12': 'dezembro'
+                };
+
+                
+                coisa.forEach((date, index) => {
+                    
+                    const monthYear = date.slice(0, 7); 
+                    const month = monthYear.slice(5, 7);
+
+
+                    const value = parseFloat(valores[index].replace(',', '.'));
+
+
+                    if (!monthlySums[month]) {
+                        monthlySums[month] = 0;
+                    }
+
+                    monthlySums[month] += value;
+                });
+
+                const output = {};
+                for (const month in monthlySums) {
+                    output[monthNames[month]] = monthlySums[month];
+                }
+
+                console.log(output);
+                const ctx3 = document.getElementById('chart3').getContext('2d');
+                const chart3 = new Chart(ctx3, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(output),
+                        datasets: [{
+                            label: 'Meios de pagamento',
+                            data: Object.values(output),
+                            backgroundColor: [
+                                'rgb(255, 0, 0)',
+                                'rgb(0, 128, 255)',
+                                'rgb(255, 165, 0)',
+                                'rgb(0, 255, 127)',
+                                'rgb(75, 0, 130)',
+                                'rgb(255, 20, 147)',
+                                'rgb(255, 105, 180)',
+                                'rgb(0, 191, 255)',
+                                'rgb(128, 0, 0)',
+                                'rgb(255, 228, 196)',
+                                'rgb(34, 139, 34)',
+                                'rgb(0, 0, 255)',
+                                'rgb(255, 192, 203)',
+                                'rgb(139, 69, 19)',
+                                'rgb(64, 224, 208)',
+                                'rgb(255, 140, 0)',
+                                'rgb(0, 255, 255)',
+                                'rgb(255, 105, 180)',
+                                'rgb(255, 160, 122)',
+                                'rgb(255, 0, 255)'
+                            ],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: 'white'
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Gerando dados dos Pratos
+                const pratos = Object.values(data['Pratos']).reduce((acc, item) => {
+                    acc[item] = (acc[item] || 0) + 1;
+                    return acc;
+                }, {});
+
+                const ctx4 = document.getElementById('chart4').getContext('2d');
+                const chart4 = new Chart(ctx4, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(pratos),
+                        datasets: [{
+                            label: 'Dataset 1',
+                            data: Object.values(pratos),
+                            backgroundColor: [
+                                'rgb(255, 159, 64)',
+                                'rgb(153, 102, 255)',
+                                'rgb(255, 99, 71)',
+                                'rgb(255, 215, 0)',
+                                'rgb(0, 255, 144)',
+                                'rgb(255, 99, 0)',
+                                'rgb(0, 204, 255)',
+                                'rgb(255, 127, 80)',
+                                'rgb(0, 128, 0)',
+                                'rgb(128, 0, 128)',
+                                'rgb(255, 20, 147)',
+                                'rgb(0, 255, 255)',
+                                'rgb(255, 105, 180)',
+                                'rgb(127, 255, 0)',
+                                'rgb(240, 128, 128)',
+                                'rgb(139, 69, 19)',
+                                'rgb(64, 224, 208)',
+                                'rgb(147, 112, 219)',
+                                'rgb(255, 0, 255)',
+                                'rgb(0, 100, 0)',
+                                'rgb(255, 69, 0)'
+                            ]
+                        }]
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Aconteceu um erro:', error);
+            });
+    </script>
+</body>
+
+</html>
