@@ -6,7 +6,14 @@ import os
 import shutil
 import pandas as pd
 
-class FileManager:
+
+
+# estrutando o programa em classe seguindo a documentacao do fast api e do w3school
+# https://www.w3schools.com/python/python_classes.asp
+
+
+# classe para gerenciar movimentacao do arquivo
+class FileManager: 
     def __init__(self, upload_dir="./uploaded_files"):
         self.upload_dir = upload_dir
         os.makedirs(self.upload_dir, exist_ok=True)
@@ -26,8 +33,11 @@ class FileManager:
         }
         df = pd.read_excel(file_path, engine='odf')
 
-        if not df.empty:  # Check if the file is empty
+        if not df.empty:  # arquivo possui conteudo ? 
+
+            #
             dados_arquivo = df[['Prato', 'Valor', 'Data da Compra', 'Meio de Pagamento']]
+            
             dados = dados_arquivo.to_dict(orient='records')
             for item in dados:
                 conteudo["Pratos"].append(item['Prato'])
@@ -39,27 +49,31 @@ class FileManager:
 
         return []
 
+# classe principal 
 class MyApp:
     def __init__(self):
         self.app = FastAPI()
         self.file_manager = FileManager()
         
-        # Mount the static directory
-        self.app.mount("/static", StaticFiles(directory="static"), name="static")
+        # Corrigindo problema do carregamento de imagens 
+        self.app.mount("/static", StaticFiles(directory="static"), name="static") #https://stackoverflow.com/questions/70632673/fastapi-is-not-loading-static-files
         
         self.setup_routes()
         self.setup_middleware()
 
-    def setup_middleware(self):
-        self.app.add_middleware(
-            CORSMiddleware,
+    # Resolvendo problema de redirecionamento 
+    def setup_middleware(self): # parte do codigo retirado de https://stackoverflow.com/questions/65635346/how-can-i-enable-cors-in-fastapi
+        self.app.add_middleware( # https://stackoverflow.com/questions/73607320/fastapis-redirectresponse-doesnt-work-as-expected-in-swagger-ui
+            CORSMiddleware, # https://stackoverflow.com/questions/65635346/how-can-i-enable-cors-in-fastapi
             allow_origins=["*"],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
         )
 
-    def setup_routes(self):
+
+    # criando rotas da api
+    def setup_routes(self): # exemplos retirados de https://stackoverflow.com/questions/63853813/how-to-create-routes-with-fastapi-within-a-class
         @self.app.get("/", response_class=HTMLResponse)
         async def read_root():
             with open("static/index.html") as f:
@@ -68,14 +82,18 @@ class MyApp:
         @self.app.post("/uploadfile/")
         async def upload_file(file: UploadFile = File(...)):
             file_path = self.file_manager.save_file(file)
+            # enviando codigo de redirecionamento para como resposta junta a pagina
+            
+            # o script de fetch na paginaestara aguardando um redirect
             return RedirectResponse(url='/grafico', status_code=303)
 
-        @self.app.get("/grafico", response_class=HTMLResponse)
+        @self.app.get("/grafico", response_class=HTMLResponse) 
         async def show_graph_page():
+            # parte onde informacoes dos dados serao mostrados
             with open("static/graficos.html") as f:
                 return f.read()
 
-        @self.app.get("/data")
+        @self.app.get("/data") # rota para receber dados do arquivo
         async def fetch_data():
             dados = self.file_manager.extract_data(os.path.join(self.file_manager.upload_dir, "dados.ods"))
             return dados

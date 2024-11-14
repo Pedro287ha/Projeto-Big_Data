@@ -29,7 +29,8 @@
             <h2 class="text-2xl font-bold mb-4 text-center text-red-400">
                 Envie arquivo com os dados
             </h2>
-            <form id="uploadForm" action="http://localhost:8000/uploadfile/" method="POST" enctype="multipart/form-data">
+            <form id="uploadArquivo" action="http://localhost:8000/uploadfile/" method="POST"
+                enctype="multipart/form-data">
                 <div class="mb-4">
                     <label class="block text-gray-300 text-sm font-bold mb-2" for="file-upload">
                         Escolher Arquivo
@@ -49,35 +50,32 @@
 
             <!-- Redirecionar usuario para pagina de graficos-->
             <script>
-                document.getElementById('uploadForm').addEventListener('submit', function (event) {
+                document.getElementById('uploadArquivo').addEventListener('submit', function (event) {
+
                     event.preventDefault(); // Evitar que usuario nao envie nada 
-                    const formData = new FormData(this);
-            
-                    fetch(this.action, {
+
+                    const formData = new FormData(this); // criando objeto para enviar dados
+                    
+                    // formData.action (seguindo tutorial da mozila https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+                    fetch(this.action, { // 
                         method: 'POST',
                         body: formData
                     })
-                    .then(response => {
-                        if (response.redirected) {
-                            // Move o usuario para pagina de graficos
-                            window.location.href = response.url; 
-                        } else {
-                            return response.json(); 
-                        }
-                    })
-                    .then(data => {
-                        if (data) {
-                            console.log('Success:', data);
-                            alert('Enviado com Sucesso');
-                        }
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        alert('Error algo aconteceu... olhe o console!');
-                    });
+                        .then(response => {
+                            if (response.redirected) {
+                                // Move o usuario para pagina de graficos
+                                window.location.href = response.url;
+                            } else {
+                                return response.json();
+                            }
+                        })
+                        .catch((error) => {
+                            console.error('Erro ---> ', error);
+                            alert('Error algo aconteceu... olhe o console!');
+                        });
                 });
             </script>
-            
+
         </div>
     </main>
 </body>

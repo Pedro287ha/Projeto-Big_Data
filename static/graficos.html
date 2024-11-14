@@ -50,42 +50,49 @@
     </div>
 
     <script>
-
+        const apiUrl = "http://localhost:8000/data"
+        
+        // gerando lista de meses em uma lista ex 0 = [janeiro]
         function gerarMesData(dateString) {
+            
+
+            // Criando um objeto de date a partir da string do usuario
             const date = new Date(dateString);
 
             // Definindo nomes dos meses
-            const monthNames = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
+            const nomeMeses = ["janeiro", "fevereiro", "março", "abril", "maio", "junho",
                 "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
-            
-            const monthIndex = date.getMonth();
-            return monthNames[monthIndex];
+            // Pegando o mes e retorn
+
+            const indexMes = date.getMonth();
+            return nomeMeses[indexMes];
         }
 
 
-        // Make a request to the API
-        fetch('http://localhost:8000/data')
+        // Fazendo a requisicao para a API em python 
+        fetch(apiUrl)
             .then(response => {
-                if (!response.ok) {
+                if (!response.ok) { // exemplo de https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
                     throw new Error('Ocorreu algum erro');
                 }
                 return response.json();
             })
+                //caso a requisicao seja bem sucedida, montar todos os graficos
+                //
             .then(data => {
 
 
-                // Logica meio de pagamento
+                // -------- Logica meio de pagamento ---- \\
                 let lista_items = [Object.values(data['Meio_pagamentos'])];
                 lista_geral = lista_items.map(innerList => innerList).flat();
-
-
 
 
                 const frequency = lista_geral.reduce((acc, item) => {
                     acc[item] = (acc[item] || 0) + 1;
                     return acc;
                 }, {});
+                
                 // Dividindo item em 2 listas
                 const uniqueItems = Object.keys(frequency); 
                 const counts = Object.values(frequency);
@@ -144,8 +151,10 @@
 
                 let lista_compra_mes = []
                 for (let x of data["Data_compras"]) {
+                    console.log(x)
                     lista_compra_mes.push(gerarMesData(x));
                 }
+                console.log(lista_compra_mes)
                 const gtt = lista_compra_mes.reduce((acc, item) => {
                     acc[item] = (acc[item] || 0) + 1;
                     return acc;
@@ -190,14 +199,13 @@
 
                 // Ajustes e configuracoes grafico sumario mes
 
-
                 const valores = Object.values(data['Valores']);
                 const coisa = Object.values(data["Data_compras"])
 
                 // 
                 const monthlySums = {};
 
-                const monthNames = {
+                const nomeMeses = {
                     '01': 'janeiro',
                     '02': 'fevereiro',
                     '03': 'março',
@@ -231,7 +239,7 @@
 
                 const output = {};
                 for (const month in monthlySums) {
-                    output[monthNames[month]] = monthlySums[month];
+                    output[nomeMeses[month]] = monthlySums[month];
                 }
 
                 console.log(output);
